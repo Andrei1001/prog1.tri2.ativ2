@@ -4,6 +4,8 @@
  * - getItems needs to await loadListFromDisk()
  */
 
+import { indexOfLine } from "bun"
+
 // class Item_ { 
 //   public title: string
 //   constructor(title: string) {
@@ -71,7 +73,17 @@ class TodoList {
     const items = await this.items
     return Array.from(items)
   }
+
+  async editItems(index :number, newTitle: string){
+ const items = await this.items
+ if(!items[index])
+  throw `Item de index ${index} não existe`
+     items[index].title = newTitle
+     await this.saveListToDisk()
+  }
 }
+
+
 
 export default TodoList
 export { TodoList, Item }

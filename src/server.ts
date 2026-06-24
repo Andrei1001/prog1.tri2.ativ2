@@ -1,4 +1,5 @@
 import TodoListClass, { Item } from "./core"
+
 const todolist = new TodoListClass("todolist.json")
 
 async function testRoute(req: Bun.BunRequest) {
@@ -7,15 +8,19 @@ async function testRoute(req: Bun.BunRequest) {
     time: new Date().toLocaleString('pt-BR'),
     body: await req.body?.text(),
     key: crypto.randomUUID()
-  });
+  })
 }
 
 const server = Bun.serve({
   port: 3000,
   routes: {
     '/': (req) => new Response(Bun.file('./public/index.html')),
-    '/api-debugger': (req) => new Response(Bun.file('./public/api-debugger.html')),
-    '/test':  testRoute,
+
+    '/api-debugger': (req) =>
+      new Response(Bun.file('./public/api-debugger.html')),
+
+    '/test': testRoute,
+
     '/todo': {
       GET: async () => {
         const items = await todolist.getItems()
@@ -24,14 +29,14 @@ const server = Bun.serve({
 
       POST: async (req) => {
         let data
-  
+
         try {
           data = await req.body?.json()
-        } catch(e) {
+        } catch (e) {
           return new Response('json inválido', { status: 400 })
         }
 
-        if (!data?.title) 
+        if (!data?.title)
           return new Response('É preciso informar title', { status: 400 })
 
         let index: number
@@ -45,27 +50,58 @@ const server = Bun.serve({
         return Response.json({ index }, { status: 201 })
       }
     },
+
     '/todo/:index': {
       GET: (req) => {
         return new Response("Not implemented yet!", { status: 501 })
       },
+
       DELETE: async (req) => {
         const strIndex = req.params.index
         const index = parseInt(strIndex)
-        if (isNaN(index)) 
+
+        if (isNaN(index))
           return new Response('/todo/:index index precisa ser um número inteiro', { status: 400 })
+
         try {
           await todolist.removeItem(index)
           return new Response(`Item do index ${index} removido.`)
-        } catch(e) {
+        } catch (e) {
+          return new Response(`Item do index ${index} não existe.`, { status: 400 })
+        }
+      },
+
+      PATCH: async (req) => {
+        const strIndex = req.params.index
+        const index = parseInt(strIndex)
+
+        if (isNaN(index))
+          return new Response('/todo/:index index precisa ser um número inteiro', { status: 400 })
+
+        let data
+
+        try {
+          data = await req.body?.json()
+        } catch {
+          return new Response('json inválido', { status: 400 })
+        }
+
+        if (!data?.title)
+          return new Response('É preciso informar title', { status: 400 })
+
+        try {
+          await todolist.editItems(index, data.title)
+          return new Response(`Item do index ${index} editado.`)
+        } catch {
           return new Response(`Item do index ${index} não existe.`, { status: 400 })
         }
       }
     }
   },
-  fetch(req) {
-    return new Response("Not Found", { status: 404 });
-  },
-});
 
-console.log(`Server running at http://localhost:${server.port}`);
+  fetch(req) {
+    return new Response("Not Found", { status: 404 })
+  }
+})
+
+console.log(`Server running at http://localhost:${server.port}`)
