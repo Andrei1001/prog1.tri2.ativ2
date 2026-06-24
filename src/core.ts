@@ -73,7 +73,7 @@ class TodoList {
     const items = await this.items
     return Array.from(items)
   }
-
+// tentativa do edit
   async editItems(index :number, newTitle: string){
  const items = await this.items
  if(!items[index])
